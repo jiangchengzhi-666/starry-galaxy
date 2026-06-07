@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>✨ 送你一片星河 ✨</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            color: white;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 50px 20px;
+        }
+
+        .title {
+            font-size: 3em;
+            font-weight: 200;
+            letter-spacing: 20px;
+            text-shadow:
+                0 0 30px rgba(100, 200, 255, 0.9),
+                0 0 60px rgba(100, 150, 255, 0.6),
+                0 0 100px rgba(100, 100, 255, 0.4);
+            animation: fadeInDown 3s cubic-bezier(0.23, 1, 0.32, 1), float 8s ease-in-out infinite;
+            opacity: 0;
+            animation-fill-mode: forwards;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.5));
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            font-weight: 300;
+            letter-spacing: 12px;
+            color: rgba(200, 210, 255, 0.7);
+            text-shadow: 0 0 40px rgba(150, 180, 255, 0.4);
+            animation: fadeInUp 3s cubic-bezier(0.23, 1, 0.32, 1) 0.8s both;
+        }
+
+        .hint {
+            font-size: 0.8em;
+            font-weight: 300;
+            letter-spacing: 5px;
+            color: rgba(180, 190, 220, 0.5);
+            animation: fadeInUp 3s cubic-bezier(0.23, 1, 0.32, 1) 2s both;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+            animation: fadeInUp 3s cubic-bezier(0.23, 1, 0.32, 1) 2.5s both;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .controls p {
+            font-size: 0.6em;
+            font-weight: 300;
+            color: rgba(180, 190, 220, 0.4);
+            letter-spacing: 1.5px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+        }
+
+        .stats {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            z-index: 10;
+            pointer-events: none;
+            animation: fadeIn 2s ease 3s both;
+        }
+
+        .stats span {
+            display: block;
+            font-size: 0.6em;
+            font-weight: 300;
+            color: rgba(180, 190, 220, 0.35);
+            letter-spacing: 1.5px;
+            margin: 4px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mode-info {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 10;
+            pointer-events: none;
+            text-align: right;
+            animation: fadeIn 2s ease 3s both;
+        }
+
+        .mode-info .label {
+            font-size: 0.55em;
+            font-weight: 300;
+            color: rgba(180, 190, 220, 0.35);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .mode-info .mode {
+            font-size: 0.9em;
+            font-weight: 300;
+            color: rgba(100, 200, 255, 0.7);
+            letter-spacing: 3px;
+            margin-top: 5px;
+        }
+
+        .sound-toggle {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            z-index: 20;
+            pointer-events: all;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            animation: fadeIn 2s ease 3.5s both;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(100, 200, 255, 0.3);
+        }
+
+        .sound-toggle svg {
+            width: 18px;
+            height: 18px;
+            fill: rgba(200, 210, 255, 0.6);
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .loader-content { text-align: center; }
+
+        .loader-ring {
+            width: 80px; height: 80px;
+            border: 2px solid rgba(100, 200, 255, 0.1);
+            border-top-color: rgba(100, 200, 255, 0.6);
+            border-radius: 50%;
+            animation: spin 1.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+            margin: 0 auto 30px;
+        }
+
+        .loader-ring::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 2px solid rgba(150, 100, 255, 0.1);
+            border-bottom-color: rgba(150, 100, 255, 0.5);
+            border-radius: 50%;
+            animation: spin 2s cubic-bezier(0.45, 0, 0.55, 1) infinite reverse;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #loader h2 {
+            color: rgba(200, 210, 255, 0.8);
+            letter-spacing: 10px;
+            font-weight: 200;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        #loader p {
+            color: rgba(180, 190, 220, 0.4);
+            letter-spacing: 5px;
+            font-size: 0.7em;
+            font-weight: 300;
+        }
+
+        .progress-bar {
+            width: 180px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 25px auto;
+            overflow: hidden;
+            border-radius: 1px;
+        }
+
+        .progress-bar-inner {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(100, 200, 255, 0.6), rgba(150, 100, 255, 0.6));
+            animation: progress 3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-ring"></div>
+            <h2>星河生成中</h2>
+            <div class="progress-bar">
+                <div class="progress-bar-inner"></div>
+            </div>
+            <p>正在编织宇宙经纬</p>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="overlay">
+        <div class="title">送你一片星河</div>
+        <div>
+            <div class="subtitle">愿你眼中有星辰 心中有山海</div>
+            <div class="hint">轻触屏幕 开启星河之旅</div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <span id="particleCount">粒子: 250,000</span>
+        <span id="fpsDisplay">FPS: 60</span>
+    </div>
+
+    <div class="mode-info">
+        <span class="label">当前形态</span>
+        <span class="mode" id="modeDisplay">螺旋银河</span>
+    </div>
+
+    <div class="sound-toggle" id="soundToggle" title="开关音效">
+        <svg viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+    </div>
+
+    <div class="controls">
+        <p>🖱️ 移动 · 粒子跟随</p>
+        <p>🖱️ 单击 · 星爆绽放</p>
+        <p>🖱️ 双击 · 超新星爆发</p>
+        <p>🖱️ 长按 · 黑洞吸引</p>
+        <p>⌨️ 1-5 · 切换形态</p>
+        <p>⌨️ 空格 · 暂停旋转</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ============ 配置 - 粒子拉满 ============
+        const CONFIG = {
+            galaxyCount: 180000,      // 主银河
+            nebulaCount: 25000,       // 星云
+            dustCount: 10000,         // 尘埃
+            backgroundCount: 20000,   // 背景星
+            brightStarCount: 1500,    // 亮星 - 大幅增加
+            meteorCount: 30,          // 流星
+            gasCloudCount: 15000,     // 气体云
+
+            galaxyRadius: 35,
+            galaxyThickness: 2,
+            spiralArms: 5,
+            spiralTightness: 0.55,
+            mouseInfluence: 0.3,
+            explosionForce: 30,
+            superNovaForce: 60,
+            blackHoleForce: 0.25,
+            returnSpeed: 0.018,
+            autoRotateSpeed: 0.00012,
+            // 新增：多层背景粒子
+            farBackgroundCount: 50000,  // 远景背景星
+            mediumBackgroundCount: 30000, // 中景背景星
+            nebulaFarCount: 20000,       // 远景星云
+        };
+
+        const GALAXY_MODES = {
+            spiral: { name: '螺旋银河', arms: 5, tightness: 0.55, thickness: 2 },
+            ring: { name: '环状星云', arms: 0, tightness: 0, thickness: 0.3 },
+            double: { name: '双旋银河', arms: 2, tightness: 0.85, thickness: 2.5 },
+            cluster: { name: '球状星团', arms: 0, tightness: 0, thickness: 12 },
+            vortex: { name: '漩涡星系', arms: 10, tightness: 0.3, thickness: 1 }
+        };
+
+        // ============ 全局变量 ============
+        let scene, camera, renderer;
+        let galaxySystem, nebulaSystem, dustSystem, gasSystem;
+        let brightStars = [], meteors = [];
+        let originalPositions = [], velocities = [];
+        let mouse = new THREE.Vector2(0, 0);
+        let mouseWorld = new THREE.Vector3(0, 0, 0);
+        let raycaster = new THREE.Raycaster();
+        let plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        let clock = new THREE.Clock();
+        let isExploding = false, isGathering = false, isBlackHole = false;
+        let autoRotate = true, currentMode = 'spiral';
+        let clickTime = 0, blackHoleTimeout = null;
+        let fps = 0, frameCount = 0, lastFpsTime = 0;
+        let soundEnabled = true;
+
+        // ============ 苹果风格音效系统 ============
+        class AppleAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.reverbNode = null;
+                this.initialized = false;
+            }
+
+            async init() {
+                if (this.initialized) return;
+
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // 主音量
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3;
+
+                // 创建卷积混响
+                this.reverbNode = await this.createReverb();
+                this.reverbNode.connect(this.masterGain);
+                this.masterGain.connect(this.ctx.destination);
+
+                this.initialized = true;
+            }
+
+            async createReverb() {
+                const convolver = this.ctx.createConvolver();
+                const length = this.ctx.sampleRate * 2.5;
+                const impulse = this.ctx.createBuffer(2, length, this.ctx.sampleRate);
+
+                for (let channel = 0; channel < 2; channel++) {
+                    const channelData = impulse.getChannelData(channel);
+                    for (let i = 0; i < length; i++) {
+                        channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+                    }
+                }
+
+                convolver.buffer = impulse;
+                return convolver;
+            }
+
+            // 苹果风格的清脆音效
+            playTap(frequency = 800, duration = 0.15) {
+                if (!this.initialized || !soundEnabled) return;
+
+                const now = this.ctx.currentTime;
+
+                // 主音调 - 纯净的正弦波
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(frequency, now);
+                osc1.frequency.exponentialRampToValueAtTime(frequency * 1.2, now + 0.02);
+                osc1.frequency.exponentialRampToValueAtTime(frequency * 0.8, now + duration);
+                gain1.gain.setValueAtTime(0.15, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc1.connect(gain1);
+                gain1.connect(this.masterGain);
+
+                // 泛音
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(frequency * 2.5, now);
+                gain2.gain.setValueAtTime(0.05, now);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.5);
+                osc2.connect(gain2);
+                gain2.connect(this.reverbNode);
+
+                osc1.start(now);
+                osc1.stop(now + duration);
+                osc2.start(now);
+                osc2.stop(now + duration * 0.5);
+            }
+
+            // 星爆音效 - 清脆明亮
+            playExplosion() {
+                if (!this.initialized || !soundEnabled) return;
+
+                const now = this.ctx.currentTime;
+
+                // 基础音
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.4);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                // 高频泛音
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1200, now);
+                osc2.frequency.exponentialRampToValueAtTime(400, now + 0.3);
+                gain2.gain.setValueAtTime(0.06, now);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc2.connect(gain2);
+                gain2.connect(this.reverbNode);
+
+                // 气氛音
+                const osc3 = this.ctx.createOscillator();
+                const gain3 = this.ctx.createGain();
+                osc3.type = 'triangle';
+                osc3.frequency.setValueAtTime(300, now);
+                osc3.frequency.exponentialRampToValueAtTime(100, now + 0.6);
+                gain3.gain.setValueAtTime(0.04, now);
+                gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc3.connect(gain3);
+                gain3.connect(this.reverbNode);
+
+                osc.start(now);
+                osc.stop(now + 0.4);
+                osc2.start(now);
+                osc2.stop(now + 0.3);
+                osc3.start(now);
+                osc3.stop(now + 0.6);
+            }
+
+            // 超新星 - 宏大震撼
+            playSuperNova() {
+                if (!this.initialized || !soundEnabled) return;
+
+                const now = this.ctx.currentTime;
+
+                // 低频冲击
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(150, now);
+                osc1.frequency.exponentialRampToValueAtTime(30, now + 1.5);
+                gain1.gain.setValueAtTime(0.2, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+                osc1.connect(gain1);
+                gain1.connect(this.masterGain);
+
+                // 中频爆发
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(400, now + 0.1);
+                osc2.frequency.exponentialRampToValueAtTime(100, now + 1);
+                gain2.gain.setValueAtTime(0, now);
+                gain2.gain.setValueAtTime(0.15, now + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 1);
+                osc2.connect(gain2);
+                gain2.connect(this.reverbNode);
+
+                // 高频闪光
+                const osc3 = this.ctx.createOscillator();
+                const gain3 = this.ctx.createGain();
+                osc3.type = 'sine';
+                osc3.frequency.setValueAtTime(2000, now + 0.05);
+                osc3.frequency.exponentialRampToValueAtTime(500, now + 0.5);
+                gain3.gain.setValueAtTime(0, now);
+                gain3.gain.setValueAtTime(0.08, now + 0.05);
+                gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc3.connect(gain3);
+                gain3.connect(this.reverbNode);
+
+                // 延迟回响
+                const osc4 = this.ctx.createOscillator();
+                const gain4 = this.ctx.createGain();
+                osc4.type = 'triangle';
+                osc4.frequency.setValueAtTime(200, now + 0.5);
+                osc4.frequency.exponentialRampToValueAtTime(80, now + 2);
+                gain4.gain.setValueAtTime(0, now);
+                gain4.gain.setValueAtTime(0.1, now + 0.5);
+                gain4.gain.exponentialRampToValueAtTime(0.001, now + 2);
+                osc4.connect(gain4);
+                gain4.connect(this.reverbNode);
+
+                osc1.start(now);
+                osc1.stop(now + 1.5);
+                osc2.start(now);
+                osc2.stop(now + 1);
+                osc3.start(now);
+                osc3.stop(now + 0.5);
+                osc4.start(now);
+                osc4.stop(now + 2);
+            }
+
+            // 黑洞 - 深沉神秘
+            playBlackHole() {
+                if (!this.initialized || !soundEnabled) return;
+
+                const now = this.ctx.currentTime;
+
+                // 深沉低音
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(60, now);
+                osc1.frequency.exponentialRampToValueAtTime(20, now + 3);
+                gain1.gain.setValueAtTime(0.15, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 3);
+                osc1.connect(gain1);
+                gain1.connect(this.masterGain);
+
+                // 神秘泛音
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(180, now);
+                osc2.frequency.setValueAtTime(120, now + 1);
+                osc2.frequency.setValueAtTime(90, now + 2);
+                gain2.gain.setValueAtTime(0.06, now);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 3);
+                osc2.connect(gain2);
+                gain2.connect(this.reverbNode);
+
+                // 吸引音效
+                const osc3 = this.ctx.createOscillator();
+                const gain3 = this.ctx.createGain();
+                osc3.type = 'triangle';
+                osc3.frequency.setValueAtTime(400, now);
+                osc3.frequency.exponentialRampToValueAtTime(50, now + 2.5);
+                gain3.gain.setValueAtTime(0.04, now);
+                gain3.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+                osc3.connect(gain3);
+                gain3.connect(this.reverbNode);
+
+                osc1.start(now);
+                osc1.stop(now + 3);
+                osc2.start(now);
+                osc2.stop(now + 3);
+                osc3.start(now);
+                osc3.stop(now + 2.5);
+            }
+
+            // 模式切换音效 - 优雅清脆
+            playModeSwitch() {
+                if (!this.initialized || !soundEnabled) return;
+
+                const now = this.ctx.currentTime;
+                const notes = [523, 659, 784]; // C5, E5, G5
+
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.08);
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.setValueAtTime(0.08, now + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.reverbNode);
+                    osc.start(now + i * 0.08);
+                    osc.stop(now + i * 0.08 + 0.3);
+                });
+            }
+
+            // 鼠标移动音效 - 微妙的跟随
+            playMouseMove(intensity = 0.5) {
+                if (!this.initialized || !soundEnabled || intensity < 0.3) return;
+
+                const now = this.ctx.currentTime;
+                const freq = 300 + intensity * 400;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.02 * intensity, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.connect(gain);
+                gain.connect(this.reverbNode);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+
+            toggle() {
+                soundEnabled = !soundEnabled;
+                return soundEnabled;
+            }
+        }
+
+        const audio = new AppleAudioEngine();
+
+        // ============ 纹理生成 ============
+        function createParticleTexture(size = 64) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.08, 'rgba(255, 255, 255, 0.95)');
+            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.6)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.2)');
+            gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.05)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function createStarTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            // 中心光点
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.1, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.3, 'rgba(200, 220, 255, 0.3)');
+            gradient.addColorStop(0.6, 'rgba(150, 180, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+
+            // 十字光芒
+            ctx.globalCompositeOperation = 'lighter';
+
+            const drawLine = (x1, y1, x2, y2) => {
+                const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.2)');
+                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.6)');
+                grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = grad;
+            };
+
+            // 水平
+            drawLine(0, 32, 64, 32);
+            ctx.fillRect(0, 29, 64, 6);
+
+            // 垂直
+            drawLine(32, 0, 32, 64);
+            ctx.fillRect(29, 0, 6, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // ============ 初始化 ============
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000008, 0.001);
+
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera.position.set(0, -45, 35);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 3.0;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const particleTex = createParticleTexture();
+            const starTex = createStarTexture();
+
+            createGalaxy(particleTex);
+            createNebula(particleTex);
+            createDust(particleTex);
+            createGasCloud(particleTex);
+            createBackgroundStars(particleTex);
+            createFarBackground(particleTex);      // 新增：远景背景
+            createMediumBackground(particleTex);    // 新增：中景背景
+            createFarNebula(particleTex);           // 新增：远景星云
+            createBrightStars(starTex);
+            createMeteors(particleTex);
+            createCenterGlow();
+
+            setupEventListeners();
+
+            // 初始化音频（需要用户交互）
+            const initAudioOnce = () => {
+                audio.init();
+                window.removeEventListener('click', initAudioOnce);
+                window.removeEventListener('touchstart', initAudioOnce);
+            };
+            window.addEventListener('click', initAudioOnce);
+            window.addEventListener('touchstart', initAudioOnce);
+
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 2000);
+            }, 3500);
+
+            animate();
+        }
+
+        // ============ 创建银河 ============
+        function createGalaxy(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.galaxyCount * 3);
+            const colors = new Float32Array(CONFIG.galaxyCount * 3);
+            const sizes = new Float32Array(CONFIG.galaxyCount);
+
+            originalPositions = [];
+            velocities = [];
+
+            const mode = GALAXY_MODES[currentMode];
+
+            for (let i = 0; i < CONFIG.galaxyCount; i++) {
+                let x, y, z;
+
+                if (mode.arms > 0) {
+                    const armIndex = i % mode.arms;
+                    const armAngle = (armIndex / mode.arms) * Math.PI * 2;
+                    const distance = Math.pow(Math.random(), 0.3) * CONFIG.galaxyRadius;
+                    const spiralAngle = armAngle + distance * mode.tightness + (Math.random() - 0.5) * 1.8;
+
+                    x = Math.cos(spiralAngle) * distance;
+                    y = Math.sin(spiralAngle) * distance;
+                    z = (Math.random() - 0.5) * mode.thickness * (1 - distance / CONFIG.galaxyRadius * 0.6);
+                } else if (currentMode === 'ring') {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 14 + Math.random() * 12;
+                    x = Math.cos(angle) * radius;
+                    y = Math.sin(angle) * radius;
+                    z = (Math.random() - 0.5) * 0.3;
+                } else if (currentMode === 'cluster') {
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(Math.random() * 2 - 1);
+                    const r = Math.pow(Math.random(), 0.2) * 20;
+                    x = r * Math.sin(phi) * Math.cos(theta);
+                    y = r * Math.sin(phi) * Math.sin(theta);
+                    z = r * Math.cos(phi);
+                }
+
+                const jitter = 0.15 + Math.sqrt(x * x + y * y) * 0.006;
+                positions[i * 3] = x + (Math.random() - 0.5) * jitter;
+                positions[i * 3 + 1] = y + (Math.random() - 0.5) * jitter;
+                positions[i * 3 + 2] = z;
+
+                originalPositions.push(new THREE.Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]));
+                velocities.push(new THREE.Vector3(0, 0, 0));
+
+                const distance = Math.sqrt(x * x + y * y);
+                const normalizedDist = distance / CONFIG.galaxyRadius;
+                const colorRand = Math.random();
+
+                // 增加白色粒子比例 (40% 几率为白色/亮色)
+                const isWhite = Math.random() < 0.4;
+
+                let r, g, b;
+                if (isWhite) {
+                    // 白色/亮白色粒子
+                    r = 0.9 + colorRand * 0.1;
+                    g = 0.9 + colorRand * 0.1;
+                    b = 0.95 + colorRand * 0.05;
+                } else if (normalizedDist < 0.15) {
+                    // 中心：金白色
+                    r = 1.0;
+                    g = 0.95 + colorRand * 0.05;
+                    b = 0.85 + colorRand * 0.15;
+                } else if (normalizedDist < 0.4) {
+                    // 内圈：亮蓝白
+                    r = 0.8 + colorRand * 0.2;
+                    g = 0.85 + colorRand * 0.15;
+                    b = 1.0;
+                } else if (normalizedDist < 0.7) {
+                    // 中圈：蓝紫白
+                    r = 0.7 + colorRand * 0.3;
+                    g = 0.65 + colorRand * 0.25;
+                    b = 0.95 + colorRand * 0.05;
+                } else {
+                    // 外圈：紫粉白
+                    r = 0.75 + colorRand * 0.25;
+                    g = 0.55 + colorRand * 0.3;
+                    b = 0.85 + colorRand * 0.15;
+                }
+
+                // 提高整体亮度
+                const brightness = (1 - normalizedDist * 0.15) * (0.65 + Math.random() * 0.35);
+                colors[i * 3] = r * brightness;
+                colors[i * 3 + 1] = g * brightness;
+                colors[i * 3 + 2] = b * brightness;
+
+                // 增大粒子尺寸
+                sizes[i] = (0.15 + Math.random() * 0.15) * (1 + (1 - normalizedDist) * 3);
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.35,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 1.0,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            galaxySystem = new THREE.Points(geometry, material);
+            scene.add(galaxySystem);
+        }
+
+        // ============ 创建星云 ============
+        function createNebula(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.nebulaCount * 3);
+            const colors = new Float32Array(CONFIG.nebulaCount * 3);
+
+            const nebulaColors = [
+                { r: 0.5, g: 0.3, b: 0.95 },   // 更亮的紫色
+                { r: 0.3, g: 0.5, b: 0.95 },   // 更亮的蓝色
+                { r: 0.95, g: 0.3, b: 0.6 },   // 更亮的粉红
+                { r: 0.3, g: 0.8, b: 0.6 },    // 更亮的青绿
+                { r: 0.95, g: 0.5, b: 0.3 },    // 更亮的橙色
+                { r: 0.9, g: 0.9, b: 0.95 },   // 白色星云
+            ];
+
+            for (let i = 0; i < CONFIG.nebulaCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.pow(Math.random(), 0.35) * 45;
+                const armOffset = Math.sin(angle * 2.8 + distance * 0.12) * 7;
+
+                positions[i * 3] = Math.cos(angle) * (distance + armOffset) + (Math.random() - 0.5) * 12;
+                positions[i * 3 + 1] = Math.sin(angle) * (distance + armOffset) + (Math.random() - 0.5) * 12;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
+
+                const nc = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
+                const brightness = 0.2 + Math.random() * 0.2;
+
+                colors[i * 3] = nc.r * brightness;
+                colors[i * 3 + 1] = nc.g * brightness;
+                colors[i * 3 + 2] = nc.b * brightness;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 6,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.15,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            nebulaSystem = new THREE.Points(geometry, material);
+            scene.add(nebulaSystem);
+        }
+
+        // ============ 创建尘埃 ============
+        function createDust(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.dustCount * 3);
+            const colors = new Float32Array(CONFIG.dustCount * 3);
+
+            for (let i = 0; i < CONFIG.dustCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 40;
+
+                positions[i * 3] = Math.cos(angle) * distance;
+                positions[i * 3 + 1] = Math.sin(angle) * distance;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 0.6;
+
+                const brightness = 0.25 + Math.random() * 0.25;
+                colors[i * 3] = brightness;
+                colors[i * 3 + 1] = brightness;
+                colors[i * 3 + 2] = brightness * 1.15;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.15,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            dustSystem = new THREE.Points(geometry, material);
+            scene.add(dustSystem);
+        }
+
+        // ============ 创建气体云 ============
+        function createGasCloud(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.gasCloudCount * 3);
+            const colors = new Float32Array(CONFIG.gasCloudCount * 3);
+
+            for (let i = 0; i < CONFIG.gasCloudCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 5 + Math.random() * 30;
+                const height = (Math.random() - 0.5) * 3;
+
+                positions[i * 3] = Math.cos(angle) * distance + (Math.random() - 0.5) * 5;
+                positions[i * 3 + 1] = Math.sin(angle) * distance + (Math.random() - 0.5) * 5;
+                positions[i * 3 + 2] = height;
+
+                const t = distance / 35;
+                colors[i * 3] = 0.2 + t * 0.3;
+                colors[i * 3 + 1] = 0.15 + t * 0.2;
+                colors[i * 3 + 2] = 0.4 + t * 0.3;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 3,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.06,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            gasSystem = new THREE.Points(geometry, material);
+            scene.add(gasSystem);
+        }
+
+        // ============ 创建背景星 ============
+        function createBackgroundStars(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.backgroundCount * 3);
+            const colors = new Float32Array(CONFIG.backgroundCount * 3);
+
+            for (let i = 0; i < CONFIG.backgroundCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                const r = 250 + Math.random() * 600;
+
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
+
+                const colorType = Math.random();
+                if (colorType < 0.5) {
+                    colors[i * 3] = 0.9;
+                    colors[i * 3 + 1] = 0.92;
+                    colors[i * 3 + 2] = 1.0;
+                } else if (colorType < 0.7) {
+                    colors[i * 3] = 1.0;
+                    colors[i * 3 + 1] = 0.88;
+                    colors[i * 3 + 2] = 0.72;
+                } else if (colorType < 0.85) {
+                    colors[i * 3] = 0.72;
+                    colors[i * 3 + 1] = 0.82;
+                    colors[i * 3 + 2] = 1.0;
+                } else {
+                    colors[i * 3] = 1.0;
+                    colors[i * 3 + 1] = 0.72;
+                    colors[i * 3 + 2] = 0.72;
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.8,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            scene.add(new THREE.Points(geometry, material));
+        }
+
+        // ============ 创建远景背景星（覆盖极大范围） ============
+
+        // ============ 创建远景背景星（覆盖极大范围） ============
+        function createFarBackground(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.farBackgroundCount * 3);
+            const colors = new Float32Array(CONFIG.farBackgroundCount * 3);
+
+            for (let i = 0; i < CONFIG.farBackgroundCount; i++) {
+                // 球形分布，覆盖极广范围
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                const r = 500 + Math.random() * 2000;  // 500-2500 范围
+
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
+
+                // 更多白色粒子
+                const colorType = Math.random();
+                if (colorType < 0.6) {
+                    // 60% 白色
+                    colors[i * 3] = 0.95 + Math.random() * 0.05;
+                    colors[i * 3 + 1] = 0.95 + Math.random() * 0.05;
+                    colors[i * 3 + 2] = 0.98 + Math.random() * 0.02;
+                } else if (colorType < 0.8) {
+                    // 20% 淡蓝白
+                    colors[i * 3] = 0.8 + Math.random() * 0.2;
+                    colors[i * 3 + 1] = 0.85 + Math.random() * 0.15;
+                    colors[i * 3 + 2] = 1.0;
+                } else if (colorType < 0.9) {
+                    // 10% 淡黄白
+                    colors[i * 3] = 1.0;
+                    colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+                    colors[i * 3 + 2] = 0.75 + Math.random() * 0.2;
+                } else {
+                    // 10% 淡粉白
+                    colors[i * 3] = 1.0;
+                    colors[i * 3 + 1] = 0.8 + Math.random() * 0.15;
+                    colors[i * 3 + 2] = 0.85 + Math.random() * 0.15;
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 3.0,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            scene.add(new THREE.Points(geometry, material));
+        }
+
+        // ============ 创建中景背景星 ============
+        function createMediumBackground(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.mediumBackgroundCount * 3);
+            const colors = new Float32Array(CONFIG.mediumBackgroundCount * 3);
+
+            for (let i = 0; i < CONFIG.mediumBackgroundCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                const r = 200 + Math.random() * 800;  // 200-1000 范围
+
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
+
+                // 更多白色和亮色
+                const colorType = Math.random();
+                if (colorType < 0.5) {
+                    colors[i * 3] = 0.92 + Math.random() * 0.08;
+                    colors[i * 3 + 1] = 0.92 + Math.random() * 0.08;
+                    colors[i * 3 + 2] = 0.95 + Math.random() * 0.05;
+                } else if (colorType < 0.75) {
+                    colors[i * 3] = 0.85 + Math.random() * 0.15;
+                    colors[i * 3 + 1] = 0.88 + Math.random() * 0.12;
+                    colors[i * 3 + 2] = 1.0;
+                } else {
+                    colors[i * 3] = 1.0;
+                    colors[i * 3 + 1] = 0.85 + Math.random() * 0.1;
+                    colors[i * 3 + 2] = 0.8 + Math.random() * 0.15;
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 2.0,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            scene.add(new THREE.Points(geometry, material));
+        }
+
+        // ============ 创建远景星云（覆盖更大范围） ============
+        function createFarNebula(texture) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.nebulaFarCount * 3);
+            const colors = new Float32Array(CONFIG.nebulaFarCount * 3);
+
+            const nebulaColors = [
+                { r: 0.6, g: 0.5, b: 0.95 },   // 亮紫
+                { r: 0.5, g: 0.6, b: 0.95 },   // 亮蓝
+                { r: 0.95, g: 0.5, b: 0.7 },   // 亮粉
+                { r: 0.9, g: 0.85, b: 0.95 },  // 白紫
+                { r: 0.85, g: 0.9, b: 0.95 },  // 白蓝
+            ];
+
+            for (let i = 0; i < CONFIG.nebulaFarCount; i++) {
+                // 更大的分布范围
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 100 + Math.random() * 300;  // 100-400 范围
+                const height = (Math.random() - 0.5) * 80;
+
+                positions[i * 3] = Math.cos(angle) * distance + (Math.random() - 0.5) * 60;
+                positions[i * 3 + 1] = Math.sin(angle) * distance + (Math.random() - 0.5) * 60;
+                positions[i * 3 + 2] = height;
+
+                const nc = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
+                const brightness = 0.15 + Math.random() * 0.2;
+
+                colors[i * 3] = nc.r * brightness;
+                colors[i * 3 + 1] = nc.g * brightness;
+                colors[i * 3 + 2] = nc.b * brightness;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 15,
+                map: texture,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.08,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+
+            scene.add(new THREE.Points(geometry, material));
+        }
+
+        // ============ 创建亮星 ============
+        function createBrightStars(texture) {
+            for (let i = 0; i < CONFIG.brightStarCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                const r = 100 + Math.random() * 250;
+
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+                    r * Math.sin(phi) * Math.cos(theta),
+                    r * Math.sin(phi) * Math.sin(theta),
+                    r * Math.cos(phi)
+                ]), 3));
+
+                const color = new THREE.Color();
+                color.setHSL(Math.random(), 0.25, 0.8 + Math.random() * 0.2);
+
+                const material = new THREE.PointsMaterial({
+                    size: 2.0 + Math.random() * 4.0,
+                    map: texture,
+                    color: color,
+                    transparent: true,
+                    opacity: 0.7 + Math.random() * 0.3,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    sizeAttenuation: true
+                });
+
+                const star = new THREE.Points(geometry, material);
+                star.userData = {
+                    twinkleSpeed: 0.3 + Math.random() * 2.5,
+                    twinklePhase: Math.random() * Math.PI * 2,
+                    baseOpacity: material.opacity
+                };
+                scene.add(star);
+                brightStars.push(star);
+            }
+        }
+
+        // ============ 创建流星 ============
+        function createMeteors(texture) {
+            for (let i = 0; i < CONFIG.meteorCount; i++) {
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3));
+
+                const material = new THREE.PointsMaterial({
+                    size: 0.25,
+                    map: texture,
+                    color: 0xccddff,
+                    transparent: true,
+                    opacity: 0,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    sizeAttenuation: true
+                });
+
+                const meteor = new THREE.Points(geometry, material);
+                meteor.userData = {
+                    active: false,
+                    speed: 0,
+                    direction: new THREE.Vector3(),
+                    tailMeshes: [],
+                    timer: Math.random() * 600 + 300
+                };
+                scene.add(meteor);
+                meteors.push(meteor);
+            }
+        }
+
+        // ============ 创建中心光晕 ============
+        function createCenterGlow() {
+            const createGlow = (color, size, opacity) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+
+                const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+                gradient.addColorStop(0, `rgba(${color.r * 255 | 0}, ${color.g * 255 | 0}, ${color.b * 255 | 0}, 1)`);
+                gradient.addColorStop(0.12, `rgba(${color.r * 255 | 0}, ${color.g * 255 | 0}, ${color.b * 255 | 0}, 0.35)`);
+                gradient.addColorStop(0.35, `rgba(${color.r * 120 | 0}, ${color.g * 120 | 0}, ${color.b * 120 | 0}, 0.08)`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 512, 512);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    opacity: opacity
+                });
+
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(size, size, 1);
+                return sprite;
+            };
+
+            scene.add(createGlow(new THREE.Color(0x4488ff), 70, 0.25));
+            scene.add(createGlow(new THREE.Color(0x8844ff), 45, 0.15));
+            scene.add(createGlow(new THREE.Color(0xffffff), 25, 0.35));
+        }
+
+        // ============ 事件监听 ============
+        function setupEventListeners() {
+            let lastMouseMoveTime = 0;
+
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                if (intersectPoint) mouseWorld.copy(intersectPoint);
+
+                // 限制音效频率
+                const now = Date.now();
+                if (now - lastMouseMoveTime > 50) {
+                    const speed = Math.sqrt(e.movementX * e.movementX + e.movementY * e.movementY);
+                    audio.playMouseMove(Math.min(speed / 100, 1));
+                    lastMouseMoveTime = now;
+                }
+            });
+
+            window.addEventListener('mousedown', (e) => {
+                clickTime = Date.now();
+                if (e.button === 0) {
+                    isExploding = true;
+                    triggerExplosion();
+                    audio.playExplosion();
+                } else if (e.button === 2) {
+                    isGathering = true;
+                }
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (e.button === 0) {
+                    isExploding = false;
+                    if (Date.now() - clickTime > 700) {
+                        triggerBlackHole();
+                        audio.playBlackHole();
+                    }
+                } else if (e.button === 2) {
+                    isGathering = false;
+                }
+            });
+
+            window.addEventListener('dblclick', () => {
+                triggerSuperNova();
+                audio.playSuperNova();
+            });
+
+            window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            window.addEventListener('keydown', (e) => {
+                const modes = ['spiral', 'ring', 'double', 'cluster', 'vortex'];
+                if (e.key >= '1' && e.key <= '5') {
+                    switchMode(modes[parseInt(e.key) - 1]);
+                    audio.playModeSwitch();
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    autoRotate = !autoRotate;
+                    audio.playTap(600);
+                }
+            });
+
+            // 触摸支持
+            window.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                if (intersectPoint) mouseWorld.copy(intersectPoint);
+
+                clickTime = Date.now();
+                isExploding = true;
+                triggerExplosion();
+                audio.playExplosion();
+            });
+
+            window.addEventListener('touchend', () => {
+                isExploding = false;
+                if (Date.now() - clickTime > 700) {
+                    triggerBlackHole();
+                    audio.playBlackHole();
+                }
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                if (intersectPoint) mouseWorld.copy(intersectPoint);
+            });
+
+            window.addEventListener('wheel', (e) => {
+                camera.position.z += e.deltaY * 0.05;
+                camera.position.z = Math.max(15, Math.min(150, camera.position.z));
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // 音效开关
+            document.getElementById('soundToggle').addEventListener('click', () => {
+                const enabled = audio.toggle();
+                document.getElementById('soundToggle').style.opacity = enabled ? '1' : '0.4';
+                if (enabled) audio.playTap(800);
+            });
+        }
+
+        // ============ 切换模式 ============
+        function switchMode(mode) {
+            if (currentMode === mode) return;
+            currentMode = mode;
+            document.getElementById('modeDisplay').textContent = GALAXY_MODES[mode].name;
+
+            scene.remove(galaxySystem);
+            createGalaxy(createParticleTexture());
+        }
+
+        // ============ 爆炸效果 ============
+        function triggerExplosion() {
+            const positions = galaxySystem.geometry.attributes.position.array;
+
+            for (let i = 0; i < CONFIG.galaxyCount; i++) {
+                const idx = i * 3;
+                const dx = positions[idx] - mouseWorld.x;
+                const dy = positions[idx + 1] - mouseWorld.y;
+                const dz = positions[idx + 2] - mouseWorld.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.1;
+
+                const force = CONFIG.explosionForce / (dist * 0.2 + 1);
+
+                velocities[i].x = (dx / dist) * force + (Math.random() - 0.5) * 5;
+                velocities[i].y = (dy / dist) * force + (Math.random() - 0.5) * 5;
+                velocities[i].z = (dz / dist) * force + (Math.random() - 0.5) * 5;
+            }
+        }
+
+        // ============ 超新星 ============
+        function triggerSuperNova() {
+            const positions = galaxySystem.geometry.attributes.position.array;
+
+            for (let i = 0; i < CONFIG.galaxyCount; i++) {
+                const idx = i * 3;
+                const dx = positions[idx] - mouseWorld.x;
+                const dy = positions[idx + 1] - mouseWorld.y;
+                const dz = positions[idx + 2] - mouseWorld.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.1;
+
+                const force = CONFIG.superNovaForce / (dist * 0.12 + 1);
+                const angle = Math.atan2(dy, dx);
+
+                velocities[i].x = (dx / dist) * force + Math.cos(angle + Math.PI / 2) * 4;
+                velocities[i].y = (dy / dist) * force + Math.sin(angle + Math.PI / 2) * 4;
+                velocities[i].z = (dz / dist) * force + (Math.random() - 0.5) * 10;
+            }
+        }
+
+        // ============ 黑洞 ============
+        function triggerBlackHole() {
+            isBlackHole = true;
+            if (blackHoleTimeout) clearTimeout(blackHoleTimeout);
+            blackHoleTimeout = setTimeout(() => isBlackHole = false, 5000);
+        }
+
+        // ============ 动画循环 ============
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+
+            // FPS
+            frameCount++;
+            if (time - lastFpsTime >= 1) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFpsTime = time;
+                document.getElementById('fpsDisplay').textContent = `FPS: ${fps}`;
+            }
+
+            if (!galaxySystem) return;
+
+            const positions = galaxySystem.geometry.attributes.position.array;
+            const colors = galaxySystem.geometry.attributes.color.array;
+
+            // 更新粒子
+            for (let i = 0; i < CONFIG.galaxyCount; i++) {
+                const idx = i * 3;
+
+                if (isExploding || velocities[i].length() > 0.01) {
+                    positions[idx] += velocities[i].x * 0.05;
+                    positions[idx + 1] += velocities[i].y * 0.05;
+                    positions[idx + 2] += velocities[i].z * 0.05;
+
+                    velocities[i].multiplyScalar(0.95);
+
+                    const flash = Math.max(0, 1 - velocities[i].length() * 0.03);
+                    colors[idx] = Math.min(1, colors[idx] + flash * 0.6);
+                    colors[idx + 1] = Math.min(1, colors[idx + 1] + flash * 0.5);
+                    colors[idx + 2] = Math.min(1, colors[idx + 2] + flash * 0.4);
+                } else if (isBlackHole) {
+                    const dx = mouseWorld.x - positions[idx];
+                    const dy = mouseWorld.y - positions[idx + 1];
+                    const dz = mouseWorld.z - positions[idx + 2];
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1;
+
+                    const force = CONFIG.blackHoleForce * dist * 0.4;
+                    velocities[i].x += (dx / dist) * force;
+                    velocities[i].y += (dy / dist) * force;
+                    velocities[i].z += (dz / dist) * force;
+
+                    positions[idx] += velocities[i].x * 0.035;
+                    positions[idx + 1] += velocities[i].y * 0.035;
+                    positions[idx + 2] += velocities[i].z * 0.035;
+
+                    velocities[i].multiplyScalar(0.988);
+
+                    const brightness = 0.35 + (1 - dist / 50) * 0.65;
+                    colors[idx] = Math.min(1, colors[idx] * 0.97 + brightness * 0.03);
+                    colors[idx + 1] = Math.min(1, colors[idx + 1] * 0.97 + brightness * 0.015);
+                    colors[idx + 2] = Math.min(1, colors[idx + 2] * 0.97 + brightness * 0.05);
+                } else if (isGathering) {
+                    positions[idx] += (mouseWorld.x - positions[idx]) * 0.01;
+                    positions[idx + 1] += (mouseWorld.y - positions[idx + 1]) * 0.01;
+                    positions[idx + 2] += (mouseWorld.z - positions[idx + 2]) * 0.01;
+                } else {
+                    const original = originalPositions[i];
+                    const dx = positions[idx] - mouseWorld.x;
+                    const dy = positions[idx + 1] - mouseWorld.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+                    const influence = CONFIG.mouseInfluence / (dist * 0.05 + 1);
+
+                    const targetX = original.x + dx * influence * 0.6;
+                    const targetY = original.y + dy * influence * 0.6;
+                    const targetZ = original.z + Math.sin(time * 1.0 + i * 0.002) * 0.1;
+
+                    positions[idx] += (targetX - positions[idx]) * CONFIG.returnSpeed;
+                    positions[idx + 1] += (targetY - positions[idx + 1]) * CONFIG.returnSpeed;
+                    positions[idx + 2] += (targetZ - positions[idx + 2]) * CONFIG.returnSpeed;
+
+                    const distance = Math.sqrt(original.x * original.x + original.y * original.y);
+                    const normalizedDist = distance / CONFIG.galaxyRadius;
+
+                    let tr, tg, tb;
+                    if (normalizedDist < 0.15) { tr = 1.0; tg = 0.92; tb = 0.75; }
+                    else if (normalizedDist < 0.4) { tr = 0.55; tg = 0.65; tb = 1.0; }
+                    else { tr = 0.6; tg = 0.3; tb = 0.9; }
+
+                    const brightness = (1 - normalizedDist * 0.25) * (0.55 + Math.sin(time + i * 0.004) * 0.1);
+
+                    colors[idx] += (tr * brightness - colors[idx]) * 0.02;
+                    colors[idx + 1] += (tg * brightness - colors[idx + 1]) * 0.02;
+                    colors[idx + 2] += (tb * brightness - colors[idx + 2]) * 0.02;
+                }
+            }
+
+            galaxySystem.geometry.attributes.position.needsUpdate = true;
+            galaxySystem.geometry.attributes.color.needsUpdate = true;
+
+            // 旋转其他元素
+            if (nebulaSystem) nebulaSystem.rotation.z += 0.00006;
+            if (dustSystem) dustSystem.rotation.z += 0.00015;
+            if (gasSystem) gasSystem.rotation.z += 0.0001;
+
+            // 亮星闪烁
+            brightStars.forEach(star => {
+                const twinkle = Math.sin(time * star.userData.twinkleSpeed + star.userData.twinklePhase);
+                star.material.opacity = star.userData.baseOpacity * (0.5 + twinkle * 0.5);
+            });
+
+            // 流星
+            updateMeteors(time);
+
+            // 自动旋转
+            if (autoRotate) {
+                galaxySystem.rotation.z += CONFIG.autoRotateSpeed;
+            }
+
+            // 相机跟随
+            camera.position.x += (mouse.x * 5 - camera.position.x) * 0.01;
+            camera.position.y += (mouse.y * 5 - camera.position.y) * 0.01;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        // ============ 更新流星 ============
+        function updateMeteors(time) {
+            meteors.forEach(meteor => {
+                const data = meteor.userData;
+
+                if (!data.active) {
+                    data.timer--;
+                    if (data.timer <= 0) {
+                        data.active = true;
+                        data.speed = 0.6 + Math.random() * 1.2;
+
+                        const pos = meteor.geometry.attributes.position.array;
+                        pos[0] = (Math.random() - 0.5) * 70;
+                        pos[1] = (Math.random() - 0.5) * 70;
+                        pos[2] = 8 + Math.random() * 15;
+                        meteor.geometry.attributes.position.needsUpdate = true;
+
+                        data.direction.set(
+                            (Math.random() - 0.5) * 2,
+                            (Math.random() - 0.5) * 2,
+                            -0.6 - Math.random()
+                        ).normalize();
+
+                        meteor.material.opacity = 0.85;
+                        data.tailMeshes = [];
+                    }
+                    return;
+                }
+
+                const pos = meteor.geometry.attributes.position.array;
+                pos[0] += data.direction.x * data.speed;
+                pos[1] += data.direction.y * data.speed;
+                pos[2] += data.direction.z * data.speed;
+                meteor.geometry.attributes.position.needsUpdate = true;
+
+                // 尾迹
+                if (data.tailMeshes.length < 18) {
+                    const tailGeo = new THREE.BufferGeometry();
+                    tailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([...pos]), 3));
+                    const tailMat = new THREE.PointsMaterial({
+                        size: 0.12,
+                        color: 0xaaccff,
+                        transparent: true,
+                        opacity: 0.65,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    const tail = new THREE.Points(tailGeo, tailMat);
+                    scene.add(tail);
+                    data.tailMeshes.push(tail);
+                }
+
+                data.tailMeshes.forEach((tail, i) => {
+                    tail.material.opacity *= 0.93;
+                    if (tail.material.opacity < 0.01) {
+                        scene.remove(tail);
+                        data.tailMeshes.splice(i, 1);
+                    }
+                });
+
+                if (Math.abs(pos[0]) > 60 || Math.abs(pos[1]) > 60 || pos[2] < -15) {
+                    data.active = false;
+                    data.timer = 300 + Math.random() * 500;
+                    meteor.material.opacity = 0;
+                    data.tailMeshes.forEach(tail => scene.remove(tail));
+                    data.tailMeshes = [];
+                }
+            });
+        }
+
+        // ============ 启动 ============
+        init();
+    </script>
+</body>
+</html>

@@ -362,16 +362,30 @@
     </div>
 
     <div class="controls">
-        <p>🖱️ 移动 · 粒子跟随</p>
-        <p>🖱️ 单击 · 星爆绽放</p>
-        <p>🖱️ 双击 · 超新星爆发</p>
-        <p>🖱️ 长按 · 黑洞吸引</p>
+        <p>📷 点击右侧按钮开启手势</p>
+        <p>✋ 张开 · 粒子扩散跟随</p>
+        <p>✊ 握拳 · 粒子聚拢</p>
+        <p>🤏 捏合 · 星爆绽放</p>
         <p>⌨️ 1-5 · 切换形态</p>
-        <p>⌨️ 空格 · 暂停旋转</p>
-        <p class="mobile-only">📱 双指缩放</p>
     </div>
 
+    <!-- 手势控制 UI -->
+    <div id="gesture-panel">
+        <div id="gesture-indicator">✋</div>
+        <div id="gesture-label">等待手势...</div>
+    </div>
+    <video id="camera-feed" autoplay playsinline style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;"></video>
+    <button id="camera-btn" onclick="toggleCamera()" style="position:fixed;bottom:250px;right:25px;z-index:50;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;font-size:1.5em;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.3s;">📷</button>
+    <style>
+        #gesture-panel{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:50;display:none;align-items:center;gap:15px;background:rgba(20,20,40,0.7);backdrop-filter:blur(20px);border:1px solid rgba(100,200,255,0.2);border-radius:30px;padding:12px 25px;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+        #gesture-indicator{font-size:2em;transition:all 0.3s}
+        #gesture-label{font-size:0.85em;font-weight:300;letter-spacing:3px;color:rgba(200,220,255,0.8)}
+        #camera-btn:hover,#camera-btn.active{background:rgba(100,200,255,0.3);border-color:rgba(100,200,255,0.6);box-shadow:0 0 20px rgba(100,200,255,0.3)}
+    </style>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
 
     <script>
         // ============ 配置 - 粒子拉满 ============
@@ -423,6 +437,158 @@
         let clickTime = 0, blackHoleTimeout = null;
         let fps = 0, frameCount = 0, lastFpsTime = 0;
         let soundEnabled = true;
+
+        // ============ 手势控制变量 ============
+        let cameraActive = false;
+        let handDetector = null;
+        let videoElement = null;
+        let gesturePanel = null;
+        let gestureIndicator = null;
+        let gestureLabel = null;
+        let lastGesture = '';
+        let handOpenness = 0; // 0=握拳, 1=张开
+        let handPosition = { x: 0, y: 0 };
+        let isPinching = false;
+
+        // ============ 手势控制初始化 ============
+        async function toggleCamera() {
+            const btn = document.getElementById('camera-btn');
+            videoElement = document.getElementById('camera-feed');
+            gesturePanel = document.getElementById('gesture-panel');
+            gestureIndicator = document.getElementById('gesture-indicator');
+            gestureLabel = document.getElementById('gesture-label');
+
+            if (cameraActive) {
+                // 关闭摄像头
+                if (videoElement.srcObject) {
+                    videoElement.srcObject.getTracks().forEach(t => t.stop());
+                    videoElement.srcObject = null;
+                }
+                videoElement.style.display = 'none';
+                gesturePanel.style.display = 'none';
+                btn.classList.remove('active');
+                btn.textContent = '📷';
+                cameraActive = false;
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 }
+                });
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block';
+                gesturePanel.style.display = 'flex';
+                btn.classList.add('active');
+                btn.textContent = '✋';
+                cameraActive = true;
+
+                // 初始化 MediaPipe Hands
+                const hands = new Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                });
+
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.5
+                });
+
+                hands.onResults(onHandResults);
+
+                const mpCamera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await hands.send({ image: videoElement });
+                    },
+                    width: 640,
+                    height: 480
+                });
+                await mpCamera.start();
+
+            } catch (err) {
+                console.error('摄像头启动失败:', err);
+                alert('无法访问摄像头，请确保已授权。');
+            }
+        }
+
+        // 手势结果处理
+        function onHandResults(results) {
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                gestureLabel.textContent = '未检测到手';
+                gestureIndicator.textContent = '❓';
+                isExploding = false;
+                isGathering = false;
+                return;
+            }
+
+            const landmarks = results.multiHandLandmarks[0];
+
+            // 计算手掌张开程度
+            handOpenness = calcHandOpenness(landmarks);
+
+            // 计算手掌中心位置 (用中指根部)
+            const palm = landmarks[9];
+            handPosition.x = palm.x;
+            handPosition.y = palm.y;
+
+            // 检测捏合 (拇指和食指靠近)
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+            isPinching = pinchDist < 0.06;
+
+            // 映射到 Three.js 坐标 (镜像X轴使左右自然)
+            mouse.x = -(handPosition.x * 2 - 1);
+            mouse.y = -(handPosition.y * 2 - 1);
+
+            // 更新鼠标世界坐标
+            raycaster.setFromCamera(mouse, camera);
+            const intersectPoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, intersectPoint);
+            if (intersectPoint) mouseWorld.copy(intersectPoint);
+
+            // 根据手势控制粒子状态
+            if (isPinching) {
+                gestureIndicator.textContent = '🤏';
+                gestureLabel.textContent = '捏合 · 星爆绽放';
+                isExploding = true;
+                isGathering = false;
+                triggerExplosion();
+            } else if (handOpenness > 0.65) {
+                gestureIndicator.textContent = '✋';
+                gestureLabel.textContent = '张开 · 粒子扩散';
+                isExploding = false;
+                isGathering = false;
+            } else if (handOpenness < 0.35) {
+                gestureIndicator.textContent = '✊';
+                gestureLabel.textContent = '握拳 · 粒子聚拢';
+                isExploding = false;
+                isGathering = true;
+            } else {
+                gestureIndicator.textContent = '🤚';
+                gestureLabel.textContent = '半开 · 粒子跟随';
+                isExploding = false;
+                isGathering = false;
+            }
+        }
+
+        // 计算手掌张开程度
+        function calcHandOpenness(landmarks) {
+            // 用手指尖到手掌中心的距离
+            const palm = landmarks[9]; // 中指根部
+            const tips = [4, 8, 12, 16, 20]; // 拇指、食指、中指、无名指、小指尖
+
+            let totalDist = 0;
+            for (const tipIdx of tips) {
+                const tip = landmarks[tipIdx];
+                totalDist += Math.hypot(tip.x - palm.x, tip.y - palm.y);
+            }
+            const avgDist = totalDist / 5;
+
+            // 归一化到 0-1
+            return Math.min(1, Math.max(0, (avgDist - 0.05) / 0.2));
+        }
 
         // ============ 苹果风格音效系统 ============
         class AppleAudioEngine {

@@ -97,50 +97,80 @@
         /* 移动端适配 */
         @media (max-width: 768px) {
             .overlay {
-                padding: 30px 15px;
+                padding: 20px 10px;
             }
 
             .title {
-                font-size: 1.8em;
-                letter-spacing: 10px;
-            }
-
-            .subtitle {
-                font-size: 0.9em;
+                font-size: 1.4em;
                 letter-spacing: 6px;
             }
 
+            .subtitle {
+                font-size: 0.75em;
+                letter-spacing: 4px;
+            }
+
             .hint {
-                font-size: 0.7em;
-                letter-spacing: 3px;
+                font-size: 0.6em;
+                letter-spacing: 2px;
             }
 
             .controls {
-                bottom: 25px;
-                gap: 8px;
-                padding: 0 10px;
+                bottom: 12px;
+                gap: 4px;
+                padding: 0 5px;
             }
 
             .controls p {
-                font-size: 0.55em;
-                padding: 5px 10px;
+                font-size: 0.45em;
+                padding: 3px 6px;
             }
 
             .stats {
-                top: 15px;
-                left: 15px;
+                top: 10px;
+                left: 10px;
+            }
+
+            .stats span {
+                font-size: 0.5em;
             }
 
             .mode-info {
-                top: 15px;
-                right: 15px;
+                top: 10px;
+                right: 10px;
+            }
+
+            .mode-info .mode {
+                font-size: 0.7em;
             }
 
             .sound-toggle {
-                bottom: 80px;
+                bottom: 65px;
                 right: 15px;
                 width: 35px;
                 height: 35px;
+            }
+
+            #gesture-panel {
+                top: 45px;
+                padding: 8px 15px;
+            }
+
+            #gesture-indicator {
+                font-size: 1.5em;
+            }
+
+            #gesture-label {
+                font-size: 0.7em;
+                letter-spacing: 2px;
+            }
+
+            #camera-btn {
+                bottom: 110px !important;
+                right: 12px !important;
+                width: 48px !important;
+                height: 48px !important;
+                font-size: 1.3em !important;
             }
         }
 
@@ -375,7 +405,7 @@
         <div id="gesture-label">等待手势...</div>
     </div>
     <video id="camera-feed" autoplay playsinline style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;"></video>
-    <button id="camera-btn" onclick="toggleCamera()" style="position:fixed;bottom:250px;right:25px;z-index:50;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;font-size:1.5em;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.3s;">📷</button>
+    <button id="camera-btn" onclick="toggleCamera()" style="position:fixed;bottom:140px;right:20px;z-index:50;width:55px;height:55px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:1.5em;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:all 0.3s;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📷</button>
     <style>
         #gesture-panel{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:50;display:none;align-items:center;gap:15px;background:rgba(20,20,40,0.7);backdrop-filter:blur(20px);border:1px solid rgba(100,200,255,0.2);border-radius:30px;padding:12px 25px;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
         #gesture-indicator{font-size:2em;transition:all 0.3s}
@@ -402,11 +432,11 @@
             galaxyThickness: 2,
             spiralArms: 5,
             spiralTightness: 0.55,
-            mouseInfluence: 0.3,
+            mouseInfluence: 0.4,      // 增加跟随强度
             explosionForce: 30,
             superNovaForce: 60,
             blackHoleForce: 0.25,
-            returnSpeed: 0.018,
+            returnSpeed: 0.025,       // 更快的回归速度
             autoRotateSpeed: 0.00012,
             // 新增：多层背景粒子
             farBackgroundCount: 50000,  // 远景背景星
@@ -447,8 +477,12 @@
         let gestureLabel = null;
         let lastGesture = '';
         let handOpenness = 0; // 0=握拳, 1=张开
+        let handOpennessSmooth = 0; // 平滑后的值
         let handPosition = { x: 0, y: 0 };
+        let handPositionSmooth = { x: 0, y: 0 }; // 平滑后的坐标
         let isPinching = false;
+        let lastPinchTime = 0;
+        const SMOOTH_FACTOR = 0.15; // 平滑系数，越小越平滑
 
         // ============ 手势控制初始化 ============
         async function toggleCamera() {
@@ -512,13 +546,15 @@
             }
         }
 
-        // 手势结果处理
+        // 手势结果处理（带平滑）
         function onHandResults(results) {
             if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
                 gestureLabel.textContent = '未检测到手';
                 gestureIndicator.textContent = '❓';
+                // 平滑恢复到默认状态
                 isExploding = false;
                 isGathering = false;
+                handOpennessSmooth += (0.5 - handOpennessSmooth) * SMOOTH_FACTOR;
                 return;
             }
 
@@ -527,40 +563,61 @@
             // 计算手掌张开程度
             handOpenness = calcHandOpenness(landmarks);
 
+            // 平滑处理张开度
+            handOpennessSmooth += (handOpenness - handOpennessSmooth) * SMOOTH_FACTOR;
+
             // 计算手掌中心位置 (用中指根部)
             const palm = landmarks[9];
             handPosition.x = palm.x;
             handPosition.y = palm.y;
 
+            // 平滑处理坐标
+            handPositionSmooth.x += (handPosition.x - handPositionSmooth.x) * SMOOTH_FACTOR;
+            handPositionSmooth.y += (handPosition.y - handPositionSmooth.y) * SMOOTH_FACTOR;
+
             // 检测捏合 (拇指和食指靠近)
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-            isPinching = pinchDist < 0.06;
+            const now = Date.now();
+            // 添加防抖，避免频繁触发
+            if (pinchDist < 0.06) {
+                if (!isPinching && now - lastPinchTime > 300) {
+                    isPinching = true;
+                    lastPinchTime = now;
+                }
+            } else {
+                isPinching = false;
+            }
 
             // 映射到 Three.js 坐标 (镜像X轴使左右自然)
-            mouse.x = -(handPosition.x * 2 - 1);
-            mouse.y = -(handPosition.y * 2 - 1);
+            mouse.x = -(handPositionSmooth.x * 2 - 1);
+            mouse.y = -(handPositionSmooth.y * 2 - 1);
 
             // 更新鼠标世界坐标
             raycaster.setFromCamera(mouse, camera);
             const intersectPoint = new THREE.Vector3();
             raycaster.ray.intersectPlane(plane, intersectPoint);
-            if (intersectPoint) mouseWorld.copy(intersectPoint);
+            if (intersectPoint) {
+                // 平滑移动到目标位置
+                mouseWorld.x += (intersectPoint.x - mouseWorld.x) * SMOOTH_FACTOR * 2;
+                mouseWorld.y += (intersectPoint.y - mouseWorld.y) * SMOOTH_FACTOR * 2;
+                mouseWorld.z = intersectPoint.z;
+            }
 
-            // 根据手势控制粒子状态
+            // 根据手势控制粒子状态（使用平滑后的值）
             if (isPinching) {
                 gestureIndicator.textContent = '🤏';
                 gestureLabel.textContent = '捏合 · 星爆绽放';
                 isExploding = true;
                 isGathering = false;
                 triggerExplosion();
-            } else if (handOpenness > 0.65) {
+            } else if (handOpennessSmooth > 0.6) {
                 gestureIndicator.textContent = '✋';
                 gestureLabel.textContent = '张开 · 粒子扩散';
                 isExploding = false;
                 isGathering = false;
-            } else if (handOpenness < 0.35) {
+            } else if (handOpennessSmooth < 0.4) {
                 gestureIndicator.textContent = '✊';
                 gestureLabel.textContent = '握拳 · 粒子聚拢';
                 isExploding = false;
@@ -1619,6 +1676,8 @@
 
             canvasEl.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                // 手势模式下跳过触摸控制
+                if (cameraActive) return;
                 isTouching = true;
                 touchStartTime = Date.now();
 
@@ -1646,6 +1705,7 @@
 
             canvasEl.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                if (cameraActive) return;
                 isTouching = false;
                 isExploding = false;
 
@@ -1658,6 +1718,7 @@
 
             canvasEl.addEventListener('touchmove', (e) => {
                 e.preventDefault();
+                if (cameraActive) return;
 
                 if (e.touches.length === 1 && isTouching) {
                     const touch = e.touches[0];
